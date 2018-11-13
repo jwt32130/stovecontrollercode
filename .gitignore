@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+\.metadata/
+
+Packages/
+
+StoveControllerCode/StoveControllerCPP/\.vscode/
