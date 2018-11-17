@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Src/SX1211Driver.c \
 ../Src/main.c \
 ../Src/stm32l4xx_hal_msp.c \
 ../Src/stm32l4xx_it.c \
@@ -14,6 +15,7 @@ C_SRCS += \
 ../Src/usbd_desc.c 
 
 OBJS += \
+./Src/SX1211Driver.o \
 ./Src/main.o \
 ./Src/stm32l4xx_hal_msp.o \
 ./Src/stm32l4xx_it.o \
@@ -24,6 +26,7 @@ OBJS += \
 ./Src/usbd_desc.o 
 
 C_DEPS += \
+./Src/SX1211Driver.d \
 ./Src/main.d \
 ./Src/stm32l4xx_hal_msp.d \
 ./Src/stm32l4xx_it.d \

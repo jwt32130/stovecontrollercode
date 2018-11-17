@@ -52,7 +52,7 @@
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
 #include <stdio.h>
-
+#include "global.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -60,8 +60,9 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
-SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
+
+TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -74,12 +75,24 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_TIM2_Init(void);
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
 /* USER CODE END PFP */
-
+void SendUSB(char* msg) {
+  int retry = 500;
+  while (retry > 0) {
+    if(CDC_Transmit_FS((uint8_t*)msg, strlen(msg)) != USBD_BUSY) {
+      return;
+    }
+    retry--;
+  }
+}
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
@@ -117,16 +130,24 @@ int main(void)
   MX_I2C1_Init();
   MX_SPI2_Init();
   MX_SPI1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
+  // HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+  // HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
+  // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
   uint8_t spiRxdata[4] = {0x00, 0x00, 0x00, 0x00};
+
+
   char* mesg = "Init Complete\n\r";
-  CDC_Transmit_FS((uint8_t*)mesg, strlen(mesg));
+  SendUSB("Init Complete\n\r");
+  
+  // CDC_Transmit_FS((uint8_t*)mesg, strlen(mesg));
   int tcoupleTempInt = 0;
   /* USER CODE END 2 */
 
@@ -136,7 +157,7 @@ int main(void)
   {
 
   /* USER CODE END WHILE */
-  HAL_Delay(1);
+  HAL_Delay(1000);
 
   
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
@@ -145,58 +166,34 @@ int main(void)
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
   // if(spiRxdata[3] & 0x07) {
   if((spiRxdata[3] >> 0) & 0x01) {
-    char* tempmsg = "Open TCouple Crcuit\n\r";
-    // while(CDC_Transmit_FS(tempmsg, strlen(tempmsg)) == USBD_BUSY);
-
+    SendUSB("Open TCouple Circuit\n\r");
     tcoupleTempInt = 500;
-  //   }
-  //   if((spiRxdata[3] >> 1) & 0x01) {
-  //     char* tempmsg = "TCouple Shorted to GND\n\r";
-  //     CDC_Transmit_FS((uint8_t*)tempmsg, strlen(tempmsg));
-  //   }
-  //   if((spiRxdata[3] >> 2) & 0x01) {
-  //     char* tempmsg = "TCouple Shorted to VCC\n\r";
-  //     CDC_Transmit_FS((uint8_t*)tempmsg, strlen(tempmsg));
-  //   }
   } else {
     int8_t junctionTempWN = spiRxdata[2];
     uint8_t junctionTempDM = (spiRxdata[3] >> 4) & 0x0f;
     double junctionTemp = junctionTempWN + (junctionTempDM * 0.0625);
     uint8_t tempmsg[30];
-    // sprintf((char*)tempmsg, "%f\n\r", junctionTemp);
-    // sprintf((char*)tempmsg, "%d\n\r", junctionTempWN);
-    // CDC_Transmit_FS(tempmsg, strlen(tempmsg));
-
 
     memset(tempmsg, 0x00, sizeof(tempmsg));
     uint16_t tcoupleWN = (spiRxdata[0] << 4) + ((spiRxdata[1] & 0xf0) >> 4);
     uint8_t tcoupleDM = (spiRxdata[1] & 0x12) >> 2;
     tcoupleTempInt = tcoupleWN > 2047 ? (tcoupleWN - 4096) : tcoupleWN;
-    // double tcoupleTemp = tcoupleWN > 2047 ? (tcoupleWN - 4096) : tcoupleWN;
-    // tcoupleTemp += (tcoupleDM * 0.25);
     sprintf((char*)tempmsg, "%d\n\r", tcoupleTempInt);
-    // while(CDC_Transmit_FS(tempmsg, strlen(tempmsg)) == USBD_BUSY);
   }
   GPIO_PinState doorOpen = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
   if(doorOpen == GPIO_PIN_RESET) {
     //door  open
-    char* tempmsg = "Door Open\n\r";
-    // while(CDC_Transmit_FS(tempmsg, strlen(tempmsg)) == USBD_BUSY);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
+    SendUSB("Door Open\n\r");
+      __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_4, 1000); //off
   } else {
-    char* tempmsg = "Door Closed\n\r";
-    // while(CDC_Transmit_FS(tempmsg, strlen(tempmsg)) == USBD_BUSY);
+    SendUSB("Door Closed\n\r");
     if(tcoupleTempInt < 70) {
-      char* fanstatus = "Fan On\n\r";
-      // while(CDC_Transmit_FS(fanstatus, strlen(fanstatus)) == USBD_BUSY);
-
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
+      SendUSB("Fan On\n\r");
+      __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_4, 0); //full speed
       HAL_Delay(1);
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
     } else {
-      char* fanstatus = "Fan Off\n\r";
-      // while(CDC_Transmit_FS(fanstatus, strlen(fanstatus)) == USBD_BUSY);
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
+      SendUSB("Fan Off\n\r");
+      __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_4, 1000); //off
 
     }
   } 
@@ -357,7 +354,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -368,6 +365,56 @@ static void MX_SPI2_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
+}
+
+/* TIM2 init function */
+static void MX_TIM2_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 79;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 1000;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -392,7 +439,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1|GPIO_PIN_2, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -419,8 +466,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB11 PB12 PB4 PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_4|GPIO_PIN_5;
+  /*Configure GPIO pins : PB12 PB4 PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_4|GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

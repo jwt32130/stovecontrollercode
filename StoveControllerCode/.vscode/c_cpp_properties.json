@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/StoveControllerCPP",
+                "${workspaceFolder}/StoveControllerCPP/Drivers/CMSIS/Include",
+                "${workspaceFolder}/StoveControllerCPP/Drivers/STM32L4xx_HAL_Driver/Inc",
+                "${workspaceFolder}/StoveControllerCPP/Inc",
+                "${workspaceFolder}/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
+                "${workspaceFolder}/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                "${workspaceFolder}/StoveControllerCPP/Drivers/CMSIS/Device/ST/STM32L4xx/Include"
+            ],
+            "defines": ["STM32L433xx"],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
