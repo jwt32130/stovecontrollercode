@@ -335,6 +335,15 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
+void SendUSB(char* msg) {
+  int retry = 500;
+  while (retry > 0) {
+    if(CDC_Transmit_FS((uint8_t*)msg, strlen(msg)) != USBD_BUSY) {
+      return;
+    }
+    retry--;
+  }
+}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**

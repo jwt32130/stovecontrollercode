@@ -35,7 +35,15 @@ Src/SX1211Driver.o: ../Src/SX1211Driver.c \
  /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pcd.h \
  /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_usb.h \
  /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pcd_ex.h \
- /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/global.h
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/global.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/usbd_cdc_if.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/usbd_conf.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h
 
 /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/SX1211Driver.h:
 
@@ -110,3 +118,19 @@ Src/SX1211Driver.o: ../Src/SX1211Driver.c \
 /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pcd_ex.h:
 
 /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/global.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/usbd_cdc_if.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/usbd_conf.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h:

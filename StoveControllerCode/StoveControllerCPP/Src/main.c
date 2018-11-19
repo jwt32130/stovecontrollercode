@@ -53,6 +53,7 @@
 #include "usbd_cdc_if.h"
 #include <stdio.h>
 #include "global.h"
+#include "SX1211Driver.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -64,6 +65,7 @@ SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim2;
 
+uint8_t ADCAddress = 0x48;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 
@@ -76,6 +78,7 @@ static void MX_I2C1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM6_Init(void); 
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -84,15 +87,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* Private function prototypes -----------------------------------------------*/
 
 /* USER CODE END PFP */
-void SendUSB(char* msg) {
-  int retry = 500;
-  while (retry > 0) {
-    if(CDC_Transmit_FS((uint8_t*)msg, strlen(msg)) != USBD_BUSY) {
-      return;
-    }
-    retry--;
-  }
-}
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
@@ -131,6 +125,7 @@ int main(void)
   MX_SPI2_Init();
   MX_SPI1_Init();
   MX_TIM2_Init();
+  MX_TIM6_Init(); 
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
@@ -139,13 +134,18 @@ int main(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+  HAL_TIM_Base_Start(&htim6);
+
   // HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
   // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
   uint8_t spiRxdata[4] = {0x00, 0x00, 0x00, 0x00};
 
 
+  uint8_t tempmsg[50];
   char* mesg = "Init Complete\n\r";
   SendUSB("Init Complete\n\r");
+
+  InitRFChip();
   
   // CDC_Transmit_FS((uint8_t*)mesg, strlen(mesg));
   int tcoupleTempInt = 0;
@@ -158,8 +158,16 @@ int main(void)
 
   /* USER CODE END WHILE */
   HAL_Delay(1000);
-
-  
+  uint8_t i2cdataresponse[3];
+  HAL_I2C_Master_Receive(&hi2c1, (uint16_t)(ADCAddress<<1), i2cdataresponse, 3, 15);
+  int16_t waterpressureADC = (i2cdataresponse[0] << 8) + i2cdataresponse[1];
+  double waterVoltage = waterpressureADC * 5.0 / 32767.0;
+  //0.5V = 0psi ///// 4.5V = 15psi
+  double waterPSI = ((waterVoltage - 0.44) / 4.0) * 15;
+  //height in inches
+  double waterHeight = waterPSI / 0.036077;
+  sprintf((char*)tempmsg, "I2C: %f\n\r", waterHeight);
+  SendUSB(tempmsg);  
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
   memset(spiRxdata, 0, sizeof(spiRxdata));
   HAL_SPI_Receive(&hspi2, spiRxdata, 4, 10);
@@ -172,7 +180,6 @@ int main(void)
     int8_t junctionTempWN = spiRxdata[2];
     uint8_t junctionTempDM = (spiRxdata[3] >> 4) & 0x0f;
     double junctionTemp = junctionTempWN + (junctionTempDM * 0.0625);
-    uint8_t tempmsg[30];
 
     memset(tempmsg, 0x00, sizeof(tempmsg));
     uint16_t tcoupleWN = (spiRxdata[0] << 4) + ((spiRxdata[1] & 0xf0) >> 4);
@@ -328,7 +335,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -354,7 +361,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -418,12 +425,39 @@ static void MX_TIM2_Init(void)
 
 }
 
+/* TIM6 init function */ 
+static void MX_TIM6_Init(void) 
+{ 
+ 
+  TIM_MasterConfigTypeDef sMasterConfig; 
+ 
+  htim6.Instance = TIM6; 
+  htim6.Init.Prescaler = 80; 
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP; 
+  htim6.Init.Period = 5000; 
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE; 
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK) 
+  { 
+    _Error_Handler(__FILE__, __LINE__); 
+  } 
+ 
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET; 
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE; 
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK) 
+  { 
+    _Error_Handler(__FILE__, __LINE__); 
+  } 
+ 
+} 
+
 /** Configure pins as 
         * Analog 
         * Input 
         * Output
         * EVENT_OUT
         * EXTI
+        * Free pins are configured automatically as Analog (this feature is enabled through 
+        * the Code Generation settings)
 */
 static void MX_GPIO_Init(void)
 {
@@ -432,6 +466,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
@@ -447,6 +482,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PC14 PC15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PH0 PH1 PH3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PA0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -459,6 +506,20 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA3 PA4 PA8 PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_8|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB0 PB2 PB13 PB15 
+                           PB3 PB6 PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_2|GPIO_PIN_13|GPIO_PIN_15 
+                          |GPIO_PIN_3|GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB1 PB8 PB9 */
   GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_8|GPIO_PIN_9;

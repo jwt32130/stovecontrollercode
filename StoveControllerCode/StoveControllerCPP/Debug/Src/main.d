@@ -45,7 +45,10 @@ Src/main.o: ../Src/main.c \
  /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h \
  /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h \
  /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h \
- /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/global.h
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/global.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/SX1211Driver.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/global.h \
+ /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/usbd_cdc_if.h
 
 /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/main.h:
 
@@ -140,3 +143,9 @@ Src/main.o: ../Src/main.c \
 /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h:
 
 /home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/global.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/SX1211Driver.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/global.h:
+
+/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/Inc/usbd_cdc_if.h:

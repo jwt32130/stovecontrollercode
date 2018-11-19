@@ -26,6 +26,8 @@
 
 #include "stm32l4xx_hal.h"
 #include "global.h"
+#include "usbd_cdc_if.h"
+#include <stdio.h>
 
 /*******************************************************************
 ** Include files                                                  **
@@ -60,31 +62,6 @@
 #define RX_RUNNING           0x03
 #define TX_TIMEOUT           0x04
 #define TX_RUNNING           0x05
-
-/*******************************************************************
-** I/O Ports Definitions                                          **
-*******************************************************************/
-#if defined(_XE88LC01A_) || defined(_XE88LC05A_)
-	#define PORTO              RegPCOut
-	#define PORTI              RegPCIn
-	#define PORTDIR            RegPCDir
-   #define PORTP              RegPCPullup
-
-#endif
-#if defined(_XE88LC02_) || defined(_XE88LC02_4KI_) || defined(_XE88LC02_8KI_)
-	#define PORTO              RegPD1Out
-	#define PORTI              RegPD1In
-	#define PORTDIR            RegPD1Dir
-   #define PORTP              RegPD1Pullup
-	
-#endif
-#if defined(_XE88LC06A_) || defined(_XE88LC07A_) 
-	#define PORTO              RegPDOut
-	#define PORTI              RegPDIn
-	#define PORTDIR            RegPDDir
-   #define PORTP              RegPDPullup
-
-#endif
 
 /*******************************************************************
 ** Port A pins definitions                                        **
@@ -605,10 +582,14 @@
 ** CounterA&B value = RC * wanted time  = 2 457 600  * 2 ms = 4915**
 **                                                                **
 *******************************************************************/
-#define TS_OS          12288 // Quartz Osc wake up time, max 5 ms
-#define TS_FS           1966 // Freq Synth wake-up time from OS, max 800 us
-#define TS_RE           1229 // Receiver wake-up time from FS, max 500 us
-#define TS_TR           1229 // Transmitter wake-up time from FS, max 500 us
+// #define TS_OS          12288 // Quartz Osc wake up time, max 5 ms
+// #define TS_FS           1966 // Freq Synth wake-up time from OS, max 800 us
+// #define TS_RE           1229 // Receiver wake-up time from FS, max 500 us
+// #define TS_TR           1229 // Transmitter wake-up time from FS, max 500 us
+#define TS_OS          5000 // Quartz Osc wake up time, max 5 ms
+#define TS_FS           800 // Freq Synth wake-up time from OS, max 800 us
+#define TS_RE           500 // Receiver wake-up time from FS, max 500 us
+#define TS_TR           500 // Transmitter wake-up time from FS, max 500 us
 
 /*******************************************************************
 **                                                                **
@@ -619,7 +600,7 @@
 ** The plus 1 at the end of formula is required for the highest   **
 ** baudrate as the resulting timeout is lower than the 1 / 128Hz  **
 *******************************************************************/
-#define RF_FRAME_TIMEOUT(BitRate) (uint16_t)(_F32)((((_F32)((uint32_t)RF_BUFFER_SIZE * (uint32_t)8 *((uint32_t)4  + (uint32_t)1)) / (_F32)((uint32_t)4 * (uint32_t)BitRate)) * (_F32)128) + (_F32)1)
+#define RF_FRAME_TIMEOUT(BitRate) (uint16_t)(double)((((double)((uint32_t)RF_BUFFER_SIZE * (uint32_t)8 *((uint32_t)4  + (uint32_t)1)) / (double)((uint32_t)4 * (uint32_t)BitRate)) * (double)128) + (double)1)
 
 /*******************************************************************
 ** Functions prototypes                                           **
@@ -654,7 +635,7 @@ void SetRFMode(uint8_t mode);
 ** In  : address, value                                           **
 ** Out : -                                                        **
 *******************************************************************/
-void WriteRegister(uint8_t address, uint16_t value);
+void WriteRegister(uint8_t address, uint8_t value);
  
 /*******************************************************************
 ** ReadRegister : Reads the register value at the given address on**
@@ -663,7 +644,7 @@ void WriteRegister(uint8_t address, uint16_t value);
 ** In  : address                                                  **
 ** Out : value                                                    **
 *******************************************************************/
-uint16_t ReadRegister(uint8_t address);
+uint8_t ReadRegister(uint8_t address);
 
 /*******************************************************************
 ** Communication functions                                        **

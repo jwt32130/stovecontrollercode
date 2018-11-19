@@ -60,7 +60,7 @@ all: StoveControllerCPP.elf secondary-outputs
 StoveControllerCPP.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GNU ARM Cross C++ Linker'
-	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -ffreestanding -fno-move-loop-invariants -Wall -Wextra  -g3 -T "/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/startup/STM32L433CCTx_FLASH.ld" -Xlinker --gc-sections -Wl,-Map,"StoveControllerCPP.map" --specs=nano.specs --specs=nosys.specs -o "StoveControllerCPP.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -ffreestanding -fno-move-loop-invariants -Wall -Wextra  -g3 -T "/home/jacob/Dev/StoveController.git/StoveControllerCode/StoveControllerCPP/startup/STM32L433CCTx_FLASH.ld" -Xlinker --gc-sections -Wl,-Map,"StoveControllerCPP.map" --specs=nano.specs -u _printf_float --specs=nosys.specs -o "StoveControllerCPP.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

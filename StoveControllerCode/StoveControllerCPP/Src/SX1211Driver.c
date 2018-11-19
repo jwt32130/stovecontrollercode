@@ -28,7 +28,7 @@
 ** Include files                                                  **
 *******************************************************************/
 #include "SX1211Driver.h"
-#if 0
+
 /*******************************************************************
 ** Global variables                                               **
 *******************************************************************/
@@ -40,10 +40,10 @@ static  uint16_t ByteCounter = 0;       // RF frame byte counter
 static   uint8_t PreMode = RF_STANDBY;  // Previous chip operating mode
 static   uint8_t SyncSize = 4;          // Size of sync word
 static   uint8_t SyncValue[4];       // Value of sync word
-static  __uint32_t RFFrameTimeOut = RF_FRAME_TIMEOUT(1600); // Reception counter value (full frame timeout generation)
+static  uint32_t RFFrameTimeOut = RF_FRAME_TIMEOUT(1600); // Reception counter value (full frame timeout generation)
 
 uint8_t RegistersCfg[] = { // SX1211 configuration registers values
-		DEF_MCPARAM1 | RF_MC1_STANDBY | RF_MC1_BAND_868 | RF_MC1_VCO_TRIM_00 | RF_MC1_RPS_SELECT_1,                    
+		DEF_MCPARAM1 | RF_MC1_STANDBY | RF_MC1_BAND_915H | RF_MC1_VCO_TRIM_00 | RF_MC1_RPS_SELECT_1,                    
 		DEF_MCPARAM2 | RF_MC2_MODULATION_FSK | RF_MC2_DATA_MODE_PACKET | RF_MC2_OOK_THRESH_TYPE_PEAK | RF_MC2_GAIN_IF_00,                      
 		DEF_FDEV | RF_FDEV_100,                          
 		DEF_BITRATE | RF_BITRATE_25000,                       
@@ -75,7 +75,7 @@ uint8_t RegistersCfg[] = { // SX1211 configuration registers values
 		
 		DEF_TXPARAM | RF_TX_FC_200 | RF_TX_POWER_PLUS10,                       
 		
-		DEF_OSCPARAM | RF_OSC_CLKOUT_ON | RF_OSC_CLKOUT_427,                     
+		DEF_OSCPARAM | RF_OSC_CLKOUT_OFF | RF_OSC_CLKOUT_427,                     
 
 		DEF_PKTPARAM1 | RF_PKT1_MANCHESTER_OFF | 64,                  
 		DEF_NODEADRS  | RF_NODEADRS_VALUE,                 
@@ -103,12 +103,19 @@ void InitRFChip (void){
     // set_bit(PORTP, (SCK + NSS_DATA + NSS_CONFIG + MOSI));
 
     for(i = 0; (i + 1) <= REG_PKTPARAM4; i++){
+        char tempmsg[20];
+        sprintf((char*)tempmsg, "Send:0x%x\n\r", RegistersCfg[i]);
+        SendUSB(tempmsg);
         if(i < REG_RSSIVALUE){
             WriteRegister(i, RegistersCfg[i]);
         }
         else{
             WriteRegister(i + 1, RegistersCfg[i]);
         }
+        Wait(1000);
+        uint8_t response = ReadRegister(i);
+        sprintf((char*)tempmsg, "Recv:0x%x\n\r", response);
+        
     }
 
     SyncSize = ((RegistersCfg[REG_RXPARAM3] >> 3) & 0x03) + 1;
@@ -282,8 +289,8 @@ void WriteRegister(uint8_t address, uint8_t value){
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
     // SPINssData(1);
     // SPINssConfig(0);
-    HAL_SPI_Transmit(&hspi1, address, sizeof(address), 5);
-    HAL_SPI_Transmit(&hspi1, value, sizeof(value), 5);
+    HAL_SPI_Transmit(&hspi1, address, sizeof(address), 10);
+    HAL_SPI_Transmit(&hspi1, value, sizeof(value), 10);
     // SpiInOut(address);
     // SpiInOut(value);
     // SPINssConfig(1);
@@ -305,7 +312,7 @@ uint8_t ReadRegister(uint8_t address){
     // SPIInit();
     // SPINssData(1);
     address = ((address << 1) & 0x7E) | 0x40;
-    HAL_SPI_Transmit(&hspi1, address, sizeof(address), 5);
+    HAL_SPI_Transmit(&hspi1, address, sizeof(address), 10);
 
 
     HAL_SPI_Receive(&hspi1, &value, 1, 5);
@@ -319,10 +326,21 @@ uint8_t ReadRegister(uint8_t address){
     return value;
 }
 
+void Wait(uint16_t us) {
+    __HAL_TIM_DISABLE(&htim6);
+  __HAL_TIM_SET_COUNTER(&htim6, 0);
+  __HAL_TIM_SET_AUTORELOAD(&htim6, us);
+  __HAL_TIM_CLEAR_FLAG(&htim6, TIM_FLAG_UPDATE);
+  __HAL_TIM_ENABLE(&htim6);
+
+  while (__HAL_TIM_GET_FLAG(&htim6, TIM_FLAG_UPDATE) == RESET)
+  {
+  }
+}
 /*******************************************************************
 ** Communication functions                                        **
 *******************************************************************/
-
+#if 0
 /*******************************************************************
 ** SendRfFrame : Sends a RF frame                                 **
 ********************************************************************

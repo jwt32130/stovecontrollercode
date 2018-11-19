@@ -3,9 +3,9 @@
 #include "stm32l4xx_hal.h"
 
 
-
 SPI_HandleTypeDef hspi1;
 
+TIM_HandleTypeDef htim6; 
 
 
 
