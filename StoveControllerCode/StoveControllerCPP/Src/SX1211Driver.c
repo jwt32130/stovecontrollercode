@@ -75,7 +75,7 @@ uint8_t RegistersCfg[] = { // SX1211 configuration registers values
 		
 		DEF_TXPARAM | RF_TX_FC_200 | RF_TX_POWER_PLUS10,                       
 		
-		DEF_OSCPARAM | RF_OSC_CLKOUT_OFF | RF_OSC_CLKOUT_427,                     
+		DEF_OSCPARAM | RF_OSC_CLKOUT_ON | RF_OSC_CLKOUT_427,                     
 
 		DEF_PKTPARAM1 | RF_PKT1_MANCHESTER_OFF | 64,                  
 		DEF_NODEADRS  | RF_NODEADRS_VALUE,                 
@@ -160,7 +160,7 @@ void InitRFChip (void){
         RFFrameTimeOut = RF_FRAME_TIMEOUT(1600);
     }
 
-    SetRFMode(RF_SLEEP);
+    SetRFMode(RF_STANDBY);
 }
 
 /*******************************************************************
